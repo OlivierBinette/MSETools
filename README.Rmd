@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-This repository contains all of the code and analyses for the paper titled "On the Reliability of Multiple Systems Estimation for the Quantification of Modern Slavery"  (Binette and Steorts, 2021). Its structure is described below:
+This repository contains all of the code and analyses for the paper titled "On the Reliability of Multiple Systems Estimation for the Quantification of Modern Slavery"  (Binette and Steorts, 2021). It is structured as follows:
 
 - The R package **MSETools** provides a unified interface to multiple systems estimation (MSE) software. It implements best usage practices and computational speedups. Data from multiple system estimation studies of human trafficking has been reproduced for illustrations and analyses.
 
