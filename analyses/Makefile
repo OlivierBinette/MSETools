@@ -1,5 +1,5 @@
 all: real_data_analysis dga_sensitivity sparsemse_sensitivity internal_consistency empirical_trajectories theory
-.PHONY: real_data_analysis dga_sensitivity sparsemse_sensitivity internal_consistency empirical_trajectories theory clean
+.PHONY: real_data_analysis dga_sensitivity sparsemse_sensitivity internal_consistency empirical_trajectories theory clear clear_cache
 
 real_data_analysis: real_data/real_data_analysis.Rmd
 	Rscript -e "rmarkdown::render('real_data/real_data_analysis.Rmd', run_pandoc=FALSE)"
