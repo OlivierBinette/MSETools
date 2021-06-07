@@ -88,7 +88,7 @@ Compute estimates:
 estimates(models)
 ```
 
-Parallelize on a computing cluster:
+Parallelize the computation of estimates on a computing cluster:
 
 ``` r
 batch.estimates(models, njobs=4)
