@@ -4,7 +4,6 @@ output:
   html_document:
     number_sections: true
     self_contained: no
-bibliography: ../../biblio.bib
 linkcolor: blue
 ---
 
@@ -66,6 +65,9 @@ p1
 "Small world" prior on the decomposable graph with edge probability $\beta$.
 
 ```{r}
+library(dga)
+data(graphs5)
+
 betas = c(seq(0, 0.995, by=0.005), 0.9999, 0.999999, 0.99999999, 0.999999999)
 n_edges = sapply(graphs5, function(graph) {
   sum(MSETools:::adjMat(graph, L))/2
@@ -129,7 +131,7 @@ p3 = as_tibble(betas) %>%
 p3
 ```
 
-
+ 
 ## Complete plot
 
 

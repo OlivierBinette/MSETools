@@ -1,9 +1,12 @@
+*.Rproj
+
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 
 .DS_Store
+
 *.html
 *.js
 *.css
@@ -12,3 +15,8 @@
 *.woff
 *.woff2
 *.map
+*.svg
+
+*.o
+
+README_cache

@@ -12,6 +12,7 @@
 #' @examples
 #' sparsemse_fit <- sparsemse(UK)
 #' estimates(sparsemse_fit, mc.cores = 1)
+#' 
 #' @import assert
 #' @export
 sparsemse <- function(data,

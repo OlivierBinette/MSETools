@@ -21,6 +21,6 @@ lcmcr(data, K=10, seeds=1:200, lazy=TRUE, ...)
 Fit the latent class model of Manrique-Vallier (2016). This function initializes the MCMC chains and sampling is postponed until a call to the \code{estimates()} function. By default, 200 independent chains are initialized.
 }
 \examples{
-lcmcr_fit <- lcmcr(UK)
+lcmcr_fit <- lcmcr(UK, seeds = 1)
 estimates(lcmcr_fit, mc.cores = 1)
 }

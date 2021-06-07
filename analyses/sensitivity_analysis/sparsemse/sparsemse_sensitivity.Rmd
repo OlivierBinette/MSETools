@@ -4,7 +4,6 @@ output:
   html_document:
     number_sections: true
     self_contained: no
-bibliography: ../../biblio.bib
 linkcolor: blue
 ---
 

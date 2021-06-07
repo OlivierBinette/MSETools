@@ -13,7 +13,7 @@
 #' @value Object of class "lcmcr" containing the list of chains "lcmcr_chains", and the arguments "args" passed to this function.
 #'
 #' @examples
-#' lcmcr_fit <- lcmcr(UK)
+#' lcmcr_fit <- lcmcr(UK, seeds = 1)
 #' estimates(lcmcr_fit, mc.cores = 1)
 #' @import assert LCMCR
 #' @export
@@ -116,5 +116,14 @@ diagnostics <- function(traces) {
     sapply(traces, function(trace) FUN(trace))
   }) %>%
     data.frame()
+}
+
+#' @export
+plotTrace <- function(trace, lwd=0.1, xlab="Iteration", ylim=range(trace), ...) {
+  plot(trace[,1], type="l", ylim=ylim,
+       xlab=xlab, lwd=lwd, ...)
+  for (i in 2:ncol(trace)) {
+    lines(trace[, i], lwd=lwd)
+  }
 }
 
