@@ -17,7 +17,7 @@ structured as follows:
     estimation studies of human trafficking has been reproduced for
     illustrations and analyses.
 
--   The **analyses** folder contains the analyses and figure for Binette
+-   The **analyses** folder contains the analyses and figures for Binette
     and Steorts (2021). Each analysis is provided as an Rmd document
     which can be knitted on any platform using the included cache.
     Figures are saved to png and pdf format into subfolders. Cache can
