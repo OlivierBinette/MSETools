@@ -60,8 +60,7 @@ devtools::install_github("OlivierBinette/MSETools")
 
 -   `estimates()` computes point estimates and confidence intervals for
     a list of models.
--   `batch.estimates()` compute estimates as a SLURM job array for use
-    in a cluster.
+-   `batch.estimates()` compute estimates on a computing cluster using SLURM.
 -   `diagnostics()` computes convergence diagnostics for `lcmcr`
     objects.
 
