@@ -14,7 +14,7 @@
 #'
 #' @examples
 #' lcmcr_fit <- lcmcr(UK)
-#' estimates(lcmcr_fit)
+#' estimates(lcmcr_fit, mc.cores = 1)
 #' @import assert LCMCR
 #' @export
 lcmcr <- function(data, K = 10, seeds = 1:200, lazy=TRUE, ...) {

@@ -7,23 +7,13 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/MSETools)](https://CRAN.R-project.org/package=MSETools)
 <!-- badges: end -->
 
 **MSETools** provides a unified interface to multiple systems estimation
 (MSE) software. It implements best usage practices and computational
 speedups. Data from multiple system estimation studies of human
-trafficking has been reproduced for illustrations and analyses.
-
-The following sections of the README file provide a general overview of
-**MSETools**, including some of the available functions, installation
-instructions, and simple examples. For a more in-depth introduction,
-consult the following vignettes and user manual:
-
--   [Computing prevalence estimates using **MSETools**]()
--   [Working with MSETools on a computer cluster]()
--   [**MSETools** user manual)]()
+trafficking has been reproduced for illustrations and analyses. Analyses
+from Binette and Steorts (2021) are contained in the “analyses” folder.
 
 ## Installation
 
@@ -70,11 +60,8 @@ devtools::install_github("OlivierBinette/MSETools")
 
 ### Datasets
 
--   **UK:**
--   **New Orleans:**
--   **Western U.S.:**
--   **Netherlands:**
--   **Australia:**
+See Binette and Steorts (2021) for a description of the datasets
+reproduced herein.
 
 ## Examples
 
@@ -82,7 +69,7 @@ devtools::install_github("OlivierBinette/MSETools")
 library(MSETools)
 ```
 
-Define a list of models fitted on the UK dataset:
+Define a list of models fitted to the UK dataset:
 
 ``` r
 models = list(lcmcr(UK), sparsemse(UK), dga(UK), independence(UK))
@@ -92,12 +79,40 @@ Compute estimates:
 
 ``` r
 estimates(models)
+#> [[1]]
+#>    N.hat    N.lwr    N.upr 
+#> 20232.00 10934.95 32842.27 
+#> 
+#> [[2]]
+#>     N.hat     N.lwr     N.upr 
+#> 11312.990  9185.358 15610.886 
+#> 
+#> [[3]]
+#> N.hat N.lwr N.upr 
+#> 23016 10408 33481 
+#> 
+#> [[4]]
+#>    N.hat    N.lwr    N.upr 
+#> 13444.13 12004.03 15160.33
 ```
 
-Parallelize on a cluster:
+Parallelize on a computing cluster:
 
 ``` r
 batch.estimates(models, njobs=4)
 ```
 
 ## References
+
+-   Binette, O. and Steorts, Rebecca C. (2021) On the Reliability of
+    Multiple Systems Estimation for the Quantification of Modern
+    Slavery.
+-   Lax Chan, Bernard Silverman and Kyle Vincent (2019). SparseMSE:
+    ‘Multiple Systems Estimation for Sparse Capture Data’. R package
+    version 2.0.1. <https://CRAN.R-project.org/package=SparseMSE>
+-   James Johndrow, Kristian Lum and Patrick Ball (2021). dga:
+    Capture-Recapture Estimation using Bayesian Model Averaging. R
+    package version 2.0.1. <https://CRAN.R-project.org/package=dga>
+-   Daniel Manrique-Vallier (2020). LCMCR: Bayesian Non-Parametric
+    Latent-Class Capture-Recapture. R package version 0.4.11.
+    <https://CRAN.R-project.org/package=LCMCR>

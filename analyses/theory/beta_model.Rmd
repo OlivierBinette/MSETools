@@ -1,0 +1,78 @@
+---
+title: "Empirical trajectories"
+output:
+  html_document:
+    number_sections: true
+    self_contained: no
+linkcolor: blue
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dev=c("png", "pdf"),
+  comment = "#>",
+  fig.align = "center"
+)
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(ggplot2, dplyr, knitr, latex2exp, tibble, tidyr, parallel, slurmR, ggthemes, purrr, cowplot)
+pacman::p_load_gh("OlivierBinette/pretty")
+
+library(MSETools)
+
+colors=c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
+```
+
+# Multi-list beta model
+
+```{r}
+# For a non-observation probability fixed at a mean of 3/4
+alpha_beta <- Vectorize(function(sigma2, L) {
+  kappa = (3/4)^(-1/L)-1
+  beta = kappa/(sigma2*(1+kappa)^3) - 1/(kappa+1)
+  return(c(kappa*beta, beta))
+})
+
+gamma <- function(alpha, beta, L) {
+  if ((alpha < 0 | beta < 0)) return(NA)
+  k = 0:L
+  - sum( (-1)^k * choose(L, k) * (lgamma(alpha+k) + lgamma(beta+L-k)))
+}
+
+prob_zero <- function(a, b, L) {
+  exp(lgamma(a+b) + lgamma(b+L) - lgamma(b) - lgamma(a+b+L))
+}
+```
+
+```{r rel_bias_sigma, fig.width=4, fig.height=3}
+compute_rel_bias <- function(sigma, L) {
+  ab = alpha_beta(sigma^2, L)
+  g = sapply(1:ncol(ab), function(i) gamma(ab[1, i], ab[2, i], L))
+  p0 = sapply(1:ncol(ab), function(i) prob_zero(ab[1, i], ab[2, i], L))
+  
+  rel_bias = p0 * (exp(g) - 1)
+  return(list(rel_bias=rel_bias, precision=colSums(ab)))
+}
+
+ells = c(2, 3, 4, 5, 6)
+sigma = seq(0.01, 0.3, length.out=1000)
+
+par(mar=c(3,3,1,1))
+res = compute_rel_bias(sigma, L=ells[1])
+plot(res$precision, res$rel_bias, type="l", ylim=c(-1, 0), xlim=c(0, 40),
+     ylab="Asymptotic relative bias", xlab=TeX("Precision parameter $(a+b)$"),
+     alpha=1, col=1, lty=1)
+#lines(c(-1000,1000), c(0,0), col=0, lty=1, lwd=0.5)
+for (i in 2:length(ells)) {
+  res = compute_rel_bias(sigma, L=ells[i])
+  lines(res$precision, res$rel_bias, col=i, lty=i, alpha=1)
+}
+legend("bottomright", legend=c(paste0("L = ", ells)), col=cmap.seaborn(1:length(ells)), lty=1:length(ells), cex=0.75)
+```
+
+
+
+

@@ -19,5 +19,5 @@ Fit the SparseMSE approach of Chan et al. (2020). Note: computationally-intensiv
 }
 \examples{
 sparsemse_fit <- sparsemse(UK)
-estimates(sparsemse_fit)
+estimates(sparsemse_fit, mc.cores = 1)
 }

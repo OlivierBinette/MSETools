@@ -1,0 +1,214 @@
+---
+title: "Empirical trajectories"
+output:
+  html_document:
+    number_sections: true
+    self_contained: no
+bibliography: ../biblio.bib
+linkcolor: blue
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dev=c("png", "pdf"),
+  comment = "#>",
+  fig.align = "center"
+)
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(ggplot2, dplyr, knitr, latex2exp, tibble, tidyr, parallel, slurmR, ggthemes, purrr, cowplot)
+pacman::p_load_gh("OlivierBinette/pretty")
+
+library(MSETools)
+
+colors=c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
+```
+
+
+# Real data resampling experiment
+
+```{r}
+RNGkind(kind="Mersenne-Twister")
+set.seed(1)
+k = 100
+
+datasets = list("United Kingdom" = UK,
+                "Netherlands" = Netherlands,
+                "New Orleans" = NewOrleans,
+                "Western U.S." = WesternUS,
+                "Australia" = Australia)
+models = list("Independence" = independence,
+              "SparseMSE" = sparsemse,
+              "dga" = dga,
+              "LCMCR" = lcmcr)
+
+maximal_dataset = lapply(datasets, function(dataset) {
+  sampling.frame = dataset %>% uncount(count)
+  sampling.frame$count = 1
+  nobs = sum(sampling.frame$count)
+  
+  I = sample(1:nrow(sampling.frame), nobs, replace=FALSE)
+  J = sample(1:nrow(sampling.frame), nobs, replace=FALSE)
+  rbind(sampling.frame[I,],
+        sampling.frame[J,])
+})
+names(maximal_dataset) = names(datasets)
+
+dat = lapply(1:length(datasets), function(i) {
+  Nmax = sum(maximal_dataset[[i]]$count)
+  list(nobs=as.list(round(seq(Nmax/4, Nmax, length.out=k))),
+       dataset=names(datasets)[[i]])
+})
+
+params = tibble(dat=dat, model=list(models)) %>%
+  unnest_wider(dat) %>%
+  unnest_longer(nobs) %>% 
+  unnest_longer(model)
+```
+
+```{r, cache=TRUE}
+ests = Slurm_lapply(1:nrow(params), function(i) {
+  model = params[[i, "model"]][[1]]
+  dataset_name = params[[i, "dataset"]][[1]]
+  nobs = params[[i, "nobs"]][[1]]
+  dataset = MSEdata(maximal_dataset[[dataset_name]][1:nobs, ])
+  
+  estimates(model(dataset))
+}, njobs=nrow(params), mc.cores=16, job_name="empirical_traj_1", plan="collect",
+export=c("params", "maximal_dataset"))
+```
+
+
+```{r resampling_plot_UK, fig.width=6, fig.height=5}
+params %>% 
+  add_column(ests = ests) %>%  # Remove error messages
+  unnest_wider(ests) %>% 
+  filter(dataset == "United Kingdom") %>% 
+  ggplot(aes(x=nobs, y=(N.hat/nobs))) +
+  geom_vline(xintercept=sum(UK$count), size=0.5, linetype=1, alpha=0.3) +
+  geom_ribbon(aes(ymin=(N.lwr/nobs), ymax=(N.upr/nobs)), alpha=0.5, fill=colors[[3]]) +
+  geom_line() +
+  #coord_cartesian(ylim=c(0,25)) +
+  theme_minimal() + 
+  ylim(0, 22) +
+  facet_wrap(vars(model_id)) +
+  labs(x=TeX("Number of observations $n_{obs}$"),
+       y=unname(latex2exp::TeX("$\\hat{N}/n_{obs}$"))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        panel.grid.minor=element_line(size = 0),
+        panel.grid.major.x=element_line(size = 0),
+        axis.ticks.x=element_line(color="grey80"))
+
+```
+
+
+```{r resampling_plot_Ned, fig.width=6, fig.height=3}
+params %>% 
+  add_column(ests = ests) %>%  # Remove error messages
+  unnest_wider(ests) %>% 
+  filter(dataset == "Netherlands", model_id %in% c("dga", "SparseMSE")) %>% 
+  ggplot(aes(x=nobs, y=(N.hat/nobs))) +
+  geom_vline(xintercept=sum(Netherlands$count), size=0.5, linetype=1, alpha=0.3) +
+  geom_ribbon(aes(ymin=(N.lwr/nobs), ymax=(N.upr/nobs)), alpha=0.5, fill=colors[[3]]) +
+  geom_line() +
+  #coord_cartesian(ylim=c(0,25)) +
+  theme_minimal() + 
+  facet_wrap(vars(model_id)) +
+  labs(x=TeX("Number of observations $n_{obs}$"),
+       y=unname(latex2exp::TeX("$\\hat{N}/n_{obs}$"))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        panel.grid.minor=element_line(size = 0),
+        panel.grid.major.x=element_line(size = 0),
+        axis.ticks.x=element_line(color="grey80"))
+
+```
+
+
+# dga intro
+
+```{r, cache=TRUE}
+RNGkind(kind="Mersenne-Twister")
+set.seed(1)
+k = 200
+
+n_traj = 50
+
+# Random sample with nobs observation
+dataset = UK
+fit = SparseMSE::modelfit(dataset, mX=NULL, check=FALSE)$fit
+sampling.frame = fit$data
+sampling.frame$count = fit$fitted.values
+n = sum(sampling.frame$count)
+I = sample(1:length(sampling.frame$count), n,
+         prob=sampling.frame$count, replace=TRUE)
+simulated_data = MSEdata(sampling.frame[I, ] %>% mutate(count=1))
+Nmax = 2*sum(simulated_data$count)
+nobs = round(seq(Nmax/4, Nmax, length.out=k))
+
+truth = (sum(simulated_data$count) + exp(coef(fit)[["(Intercept)"]]))/sum(simulated_data$count)
+
+trajectories = lapply(1:n_traj, function(i){
+  maximal_dataset3 = {
+    # Resampling experiment
+    sampling.frame = simulated_data %>% uncount(count)
+    sampling.frame$count = 1
+    
+    n = sum(sampling.frame$count)
+    I = sample(1:nrow(sampling.frame), n, replace=FALSE)
+    J = sample(1:nrow(sampling.frame), n, replace=FALSE)
+    rbind(sampling.frame[I,],
+          sampling.frame[J,])
+  }
+  
+  trajectory = estimates(lapply(nobs, function(n){
+    dataset = MSEdata(maximal_dataset3[1:n, ])
+    dga(dataset)
+  }))
+  return(trajectory)
+})
+```
+
+
+```{r, fig.width=6, fig.height=3}
+data = map_dfr(1:length(trajectories), function(i) tibble(ests=trajectories[[i]], nobs=nobs, iteration = i)) %>% 
+  unnest_wider(ests)
+
+p1 = data %>% 
+  filter(iteration==1) %>% 
+ggplot(aes(x=nobs, y=N.hat/nobs, ymin=N.lwr/nobs, ymax=N.upr/nobs)) +
+  geom_hline(yintercept=truth, linetype=2) +
+  geom_ribbon(alpha=0.5, fill=colors[[3]]) +
+  geom_line() +
+  ylab(TeX("$\\hat{N}/n_{obs}$")) +
+  xlab(TeX("$n_{obs}$")) +
+  ylim(3.5, 6) +
+  theme_minimal()
+
+p2 = ggplot(data, aes(x=nobs, y=N.hat/nobs, ymin=N.lwr/nobs, ymax=N.upr/nobs)) +
+  geom_hline(yintercept=truth, linetype=2) +
+#  geom_vline(xintercept=sum(simulated_data$count), linetype=2) +
+  geom_line(aes(group=iteration), alpha=0.6) +
+  ylab("") +
+  xlab(TeX("$n_{obs}$")) +
+  ylim(3.5, 6) +
+  theme_minimal()
+
+p1
+
+p2
+```
+
+```{r dga_intro, fig.width=6, fig.height=3}
+cowplot::plot_grid(p1, p2, nrow=1, ncol=2, labels="AUTO")
+```
+
+
+
+
+`
+
+
+

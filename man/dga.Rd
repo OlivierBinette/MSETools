@@ -31,7 +31,6 @@ Fit the decomposable graphical model approach of Madigan and York (1997), as imp
 \examples{
 dga_fit <- dga(UK)
 estimates(dga_fit)
-plot(dga_fit)
 
 }
 \seealso{

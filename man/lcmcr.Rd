@@ -22,5 +22,5 @@ Fit the latent class model of Manrique-Vallier (2016). This function initializes
 }
 \examples{
 lcmcr_fit <- lcmcr(UK)
-estimates(lcmcr_fit)
+estimates(lcmcr_fit, mc.cores = 1)
 }

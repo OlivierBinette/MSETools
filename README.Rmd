@@ -6,7 +6,6 @@ output: github_document
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  eval = FALSE,
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
@@ -18,17 +17,9 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![CRAN status](https://www.r-pkg.org/badges/version/MSETools)](https://CRAN.R-project.org/package=MSETools)
 <!-- badges: end -->
 
-**MSETools** provides a unified interface to multiple systems estimation (MSE) software. It implements best usage practices and computational speedups. Data from multiple system estimation studies of human trafficking has been reproduced for illustrations and analyses.
-
-The following sections of the README file provide a general overview of **MSETools**, including some of the available functions, installation instructions, and simple examples. For a more in-depth introduction, consult the following vignettes and user manual:
-
-- [Computing prevalence estimates using **MSETools**]()
-- [Working with MSETools on a computer cluster]()
-- [**MSETools** user manual)]()
-
+**MSETools** provides a unified interface to multiple systems estimation (MSE) software. It implements best usage practices and computational speedups. Data from multiple system estimation studies of human trafficking has been reproduced for illustrations and analyses. Analyses from Binette and Steorts (2021) are contained in the "analyses" folder.
 
 ## Installation
 
@@ -74,11 +65,8 @@ devtools::install_github("OlivierBinette/MSETools")
 
 ### Datasets
 
-- **UK:**
-- **New Orleans:**
-- **Western U.S.:**
-- **Netherlands:**
-- **Australia:**
+See Binette and Steorts (2021) for a description of the datasets reproduced herein.
+
 
 ## Examples
 
@@ -86,7 +74,7 @@ devtools::install_github("OlivierBinette/MSETools")
 library(MSETools)
 ```
 
-Define a list of models fitted on the UK dataset:
+Define a list of models fitted to the UK dataset:
 
 ```{r, cache=TRUE}
 models = list(lcmcr(UK), sparsemse(UK), dga(UK), independence(UK))
@@ -98,10 +86,24 @@ Compute estimates:
 estimates(models)
 ```
 
-Parallelize on a cluster:
+Parallelize on a computing cluster:
 
 ```{r eval=FALSE}
 batch.estimates(models, njobs=4)
 ```
 
+## Running analyses
+
+Analyses contained in .Rmd files can be knitted on any platform using the included cache. They rely on a computing cluster using SLURM to generate cache files.
+
 ## References
+
+- Binette, O. and Steorts, Rebecca C. (2021) On the Reliability of Multiple Systems Estimation for the Quantification of Modern Slavery.
+- Lax Chan, Bernard Silverman and Kyle Vincent (2019). SparseMSE: 'Multiple Systems
+  Estimation for Sparse Capture Data'. R package version 2.0.1.
+  https://CRAN.R-project.org/package=SparseMSE
+- James Johndrow, Kristian Lum and Patrick Ball (2021). dga: Capture-Recapture
+  Estimation using Bayesian Model Averaging. R package version 2.0.1.
+  https://CRAN.R-project.org/package=dga
+- Daniel Manrique-Vallier (2020). LCMCR: Bayesian Non-Parametric Latent-Class
+  Capture-Recapture. R package version 0.4.11. https://CRAN.R-project.org/package=LCMCR

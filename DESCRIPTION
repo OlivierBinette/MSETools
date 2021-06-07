@@ -9,7 +9,7 @@ Authors@R:
            comment = c(ORCID = "https://orcid.org/0000-0001-6009-5206"))
 Description: MSETools provides a unified interface to multiple systems estimation (MSE) software. It implements best usage practices and computational speedups. Data from multiple system estimation studies of human trafficking has been reproduced for illustrations and analyses.
 License: MIT + file LICENSE
-Imports: assert, dga, LCMCR, SparseMSE, dplyr, purrr, rstan
+Imports: assert, dga, LCMCR, SparseMSE, dplyr, purrr, rstan, Rcpp, slurmR, tibble, tidyr
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true

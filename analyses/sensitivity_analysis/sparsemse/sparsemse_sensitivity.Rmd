@@ -1,0 +1,63 @@
+---
+title: "SparseMSE sensitivity"
+output: 
+  html_document:
+    number_sections: true
+    self_contained: no
+bibliography: ../../biblio.bib
+linkcolor: blue
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dev=c("png", "pdf"),
+  comment = "#>",
+  fig.align = "center"
+)
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(ggplot2, dplyr, knitr, latex2exp, tibble, tidyr)
+pacman::p_load_gh("OlivierBinette/pretty")
+```
+
+# SparseMSE sensitivity {#sensitivity_SparseMSE}
+
+We evaluate the sensitivity of sparsemse to the p-value threshold when applied to the UK dataset.
+
+```{r, cache=TRUE}
+library(MSETools)
+
+pthresh = c(seq(0, 0.01, by=0.0001), seq(0.011, 0.1, by=0.001))
+datasets = list("United Kingdom" = UK, 
+                "Netherlands" = Netherlands, 
+                "New Orleans" = NewOrleans, 
+                "Western U.S." = WesternUS, 
+                "Australia" = Australia)
+params = as_tibble(expand.grid(pthresh=pthresh, dataset=datasets))
+param_names = as_tibble(expand.grid(pthresh=pthresh, dataset=names(datasets), stringsAsFactors=FALSE))
+
+models = apply(params, 1, function(x) sparsemse(x$dataset, pthresh=x$pthresh))
+```
+
+```{r, cache=TRUE}
+ests = batch.estimates(models, njobs=length(models), mc.cores=20, plan="collect", job_name="SparseMSE_sensitivity", nboot=10000)
+```
+
+```{r sparsemse_sensitivity_UK, fig.width=4, fig.height=3}
+param_names %>% 
+  add_column(ests=ests) %>% 
+  tidyr::unnest_wider(ests) %>% 
+  filter(dataset=="United Kingdom") %>% 
+  ggplot() + 
+  geom_ribbon(aes(x=pthresh, ymin=N.lwr, ymax=N.upr), fill="#0072B2", alpha=0.5) +
+  geom_line(aes(x=pthresh, y=N.hat)) +
+  expand_limits(y=0) +
+  xlab("p-value threshold") +
+  ylab("Estimated population size") +
+  theme_minimal()
+```
+
+

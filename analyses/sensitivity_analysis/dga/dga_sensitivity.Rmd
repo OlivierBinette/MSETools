@@ -1,0 +1,142 @@
+---
+title: "SparseMSE sensitivity"
+output: 
+  html_document:
+    number_sections: true
+    self_contained: no
+bibliography: ../../biblio.bib
+linkcolor: blue
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dev=c("png", "pdf"),
+  comment = "#>",
+  fig.align = "center"
+)
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(ggplot2, dplyr, knitr, latex2exp, tibble, tidyr, dga, cowplot, latex2exp)
+pacman::p_load_gh("OlivierBinette/pretty")
+```
+
+# UK data
+
+## Choice of delta
+
+Prior counts are the expected counts under an independence model with inclusion probability $\kappa$.
+
+```{r}
+L = 5
+kappas = seq(0, 0.5, by=0.005)
+bins = dga:::integer.base.b(0:(2^L - 1), 2)
+deltas = lapply(kappas, function(kappa) {
+    array(sapply(1:nrow(bins), function(i) {
+    prod(kappa^bins[i,] * (1-kappa)^(1-bins[i,]))
+  }), dim=rep(2, L))
+})
+```
+
+```{r}
+library(MSETools)
+fits = lapply(deltas, function(delta) dga(UK, priorCounts=delta))
+```
+
+```{r dga_sensitivity_1, fig.width=3, fig.height=2.5}
+p1 = as_tibble(kappas) %>% 
+  rename(kappa=value) %>% 
+  add_column(ests=estimates(fits)) %>% 
+  tidyr::unnest_wider(ests) %>% 
+  ggplot() + 
+  ylim(c(0, 40000)) +
+  ylab("Population size") +
+  geom_ribbon(aes(x=kappa, ymin=N.lwr, ymax=N.upr), fill="#0072B2", alpha=0.5) +
+  geom_line(aes(x=kappa, y=N.hat)) +
+  expand_limits(y=0) + 
+  theme_minimal()
+
+p1
+```
+
+## Choice of model prior
+
+"Small world" prior on the decomposable graph with edge probability $\beta$.
+
+```{r}
+betas = c(seq(0, 0.995, by=0.005), 0.9999, 0.999999, 0.99999999, 0.999999999)
+n_edges = sapply(graphs5, function(graph) {
+  sum(MSETools:::adjMat(graph, L))/2
+})
+model_priors = lapply(betas, function(beta) {
+  sapply(n_edges, function(n) {
+    lchoose((L*(L-1)/2), n) +n*log(beta) + ((L*(L-1)/2) - n)*log(1-beta)
+  })
+})
+```
+
+```{r}
+fits2 = lapply(model_priors, function(prior) dga(UK, logPriorGraphs=prior))
+```
+
+
+```{r dga_sensitivity_2, fig.width=3, fig.height=2.5}
+p2 = as_tibble(betas) %>% 
+  rename(beta=value) %>% 
+  add_column(ests=estimates(fits2)) %>% 
+  tidyr::unnest_wider(ests) %>% 
+  ggplot() + 
+  ylab("") +
+  ylim(c(0, 40000)) +
+  geom_ribbon(aes(x=beta, ymin=N.lwr, ymax=N.upr), fill="#0072B2", alpha=0.5) +
+  geom_line(aes(x=beta, y=N.hat)) +
+  expand_limits(y=0) + 
+  theme_minimal() +
+  theme(axis.text.y = element_blank())+
+  annotate("text", x=0.75, y=37500, label="(kappa = 0.5)", size=3)
+
+p2
+```
+
+Now with prior counts corresponding with a choice of $\kappa = 0.1$.
+
+```{r}
+kappa=0.1
+delta = array(sapply(1:nrow(bins), function(i) {
+    prod(kappa^bins[i,] * (1-kappa)^(1-bins[i,]))
+  }), dim=rep(2, L))
+fits3 = lapply(model_priors, function(prior) dga(UK, logPriorGraphs=prior, priorCounts=delta))
+```
+
+
+```{r dga_sensitivity_3, fig.width=3, fig.height=2.5}
+p3 = as_tibble(betas) %>% 
+  rename(beta=value) %>% 
+  add_column(ests=estimates(fits3)) %>% 
+  tidyr::unnest_wider(ests) %>% 
+  ggplot() + 
+  ylab("") +
+  ylim(c(0, 40000)) +
+  geom_ribbon(aes(x=beta, ymin=N.lwr, ymax=N.upr), fill="#0072B2", alpha=0.5) +
+  geom_line(aes(x=beta, y=N.hat)) +
+  expand_limits(y=0) + 
+  theme_minimal() +
+  theme(axis.text.y=element_blank()) +
+  annotate("text", x=0.75, y=37500, label="(kappa = 0.1)", size=3)
+
+p3
+```
+
+
+## Complete plot
+
+
+```{r dga_sensitivity_plot, fig.height=2.5, fig.width=6}
+plot_grid(p1, p2, p3, nrow=1, ncol=3, labels="AUTO")
+```
+
+
+
+

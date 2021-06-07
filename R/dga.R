@@ -20,7 +20,6 @@
 #' @examples
 #' dga_fit <- dga(UK)
 #' estimates(dga_fit)
-#' plot(dga_fit)
 #'
 #' @seealso estimates MSEdata
 #'

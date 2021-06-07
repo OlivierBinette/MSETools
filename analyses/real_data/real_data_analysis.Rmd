@@ -1,0 +1,195 @@
+---
+title: "Application to human trafficking data"
+output: 
+  html_document:
+    number_sections: true
+    self_contained: no
+bibliography: ../biblio.bib
+linkcolor: blue
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dev=c("png", "pdf"),
+  comment = "#>",
+  fig.align = "center"
+)
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(ggplot2, dplyr, knitr, latex2exp, xtable)
+pacman::p_load_gh("OlivierBinette/pretty")
+```
+
+# Introduction {#intro}
+
+This document showcases the application of the SparseMSE, LCMCR and dga approaches to multiple systems estimation to human trafficking data, using MSETools to facilitate computations. We consider the five human trafficking datasets which are introduced in the [package README](https://github.com/OlivierBinette/MSETools) and listed below. Refer to Binette and Steorts (2021) for context and more information.
+
+```{r}
+library(MSETools)
+datasets = list("United Kingdom" = UK, 
+                "Netherlands" = Netherlands, 
+                "New Orleans" = NewOrleans, 
+                "Western U.S." = WesternUS, 
+                "Australia" = Australia)
+```
+
+# Comparison of estimates {#comparison}
+
+We compare the independence, sparsemse, dga and lcmcr models.
+
+```{r}
+models = list("Independence" = independence, 
+              "SparseMSE" = sparsemse, 
+              "dga" = dga, 
+              "LCMCR" = lcmcr)
+```
+
+These models are fitted to `datasets` and estimates are recovered.
+
+```{r grid estimates, cache=TRUE}
+ests = grid.estimates(models, datasets)
+```
+
+Results are plotted below.
+
+```{r, echo=FALSE, fig.width=6, fig.height=5} 
+published_estimates = data.frame(dataset=c("United Kingdom",
+                                   "Netherlands",
+                                   "New Orleans",
+                                   "Western U.S.",
+                                   "Australia"),
+                                 ymin=c(10000,
+                                        42000,
+                                        650,
+                                        1600,
+                                        1350),
+                                 ymax=c(13000,
+                                        58000,
+                                        1700,
+                                        3600,
+                                        1900))
+
+ests %>% 
+  left_join(published_estimates) %>% 
+  head
+
+ests %>% 
+  left_join(published_estimates) %>% 
+  ggplot() +
+    geom_linerange(aes(x = model, ymin = as.numeric(N.lwr), ymax=as.numeric(N.upr))) +
+    geom_point(aes(x = model, y = as.numeric(N.hat))) +
+    geom_rect(aes(xmin=0, xmax=5, ymin=ymin, ymax=ymax), fill="#0072B2", alpha=0.1) +
+    facet_wrap(vars(dataset), scales="free_y") + 
+    expand_limits(y=0) + 
+    ylab("Population size") +
+    theme_minimal() +
+    theme(axis.text.x=element_text(angle=45, hjust=1),
+          panel.grid.major.x = element_blank())
+```
+
+# Convergence issues {#convergence}
+
+By default, the `lcmcr` function instanciates 200 parallel chains which are each run for 100,000 iterations and subsampled down to 100 samples each. This large number of parallel chains is necessary to ensure stability of the estimates, even in cases where the Gibbs sampler does not convergence. 
+
+For instance, the LCMCR Gibbs sampler does not convergence in the case of the Netherlands (8,234 observations). This is illustrated below by plotting traces of parameters of interest as well as computing the Rhat and effective sample size statistics.
+
+```{r first trace, cache=TRUE}
+traces = MCMCtrace(lcmcr(Netherlands))
+```
+
+```{r lcmcr_convergence_1, fig.width=4, fig.height=3}
+par(mar=c(3,3,1,1))
+plotTrace(traces$prob_zero, ylim=c(0.5,1), lwd=0.5, alpha=0.9,
+          ylab=TeX("$p_0$"), xlab="Sample")
+```
+
+
+```{r}
+diagnostics(traces) %>% 
+  kable(digits=3)
+
+diagnostics(traces) %>% 
+  xtable(type="latex") %>% 
+  print(file="real_data_analysis_files/diagnostics.tex")
+```
+
+This lack of convergence persists even if the number of iterations is increased by a factor of 1000. 
+
+```{r, cache=TRUE}
+traces_long = MCMCtrace(lcmcr(Netherlands, seeds=1:20), nSamples=10000, thinning=10000)
+```
+
+```{r lcmcr_convergence_2, fig.width=3, fig.height=2.5}
+par(mar=c(2,3,1,1))
+plotTrace(traces_long$prob_zero, ylim=c(0.5,1), lwd=0.25, alpha=0.5,
+          ylab="", xlab="Sample")
+```
+
+
+```{r}
+diagnostics(traces_long) %>% 
+  kable(digits=3)
+
+diagnostics(traces_long) %>%
+  xtable(type="latex") %>% 
+  print(file="real_data_analysis_files/diagnostics2.tex")
+```
+
+The traceplot showcase two posterior modes and the lack of mixing.
+
+# Adding published estimates to plot
+
+```{r}
+published_estimates = data.frame(dataset=c("United Kingdom",
+                                   "Netherlands",
+                                   "New Orleans",
+                                   "Western U.S.",
+                                   "Australia"),
+                                 ymin=c(10000,
+                                        42000,
+                                        650,
+                                        1600,
+                                        1350),
+                                 ymax=c(13000,
+                                        58000,
+                                        1700,
+                                        3600,
+                                        1900))
+```
+
+```{r real_data_estimates, echo=FALSE, fig.width=6, fig.height=5}
+ests %>% 
+  left_join(published_estimates) %>% 
+  head
+
+ests %>% 
+  left_join(published_estimates) %>% 
+  ggplot() +
+    geom_linerange(aes(x = model, ymin = as.numeric(N.lwr), ymax=as.numeric(N.upr))) +
+    geom_point(aes(x = model, y = as.numeric(N.hat))) +
+    geom_rect(aes(xmin=0, xmax=5, ymin=ymin, ymax=ymax), fill="#0072B2", alpha=0.1) +
+    facet_wrap(vars(dataset), scales="free_y") + 
+    expand_limits(y=0) + 
+    ylab("Population size") +
+    theme_minimal() +
+    theme(axis.text.x=element_text(angle=45, hjust=1),
+          panel.grid.major.x = element_blank())
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

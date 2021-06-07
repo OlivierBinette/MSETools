@@ -1,0 +1,184 @@
+---
+title: "Internal consistency analysis"
+output: 
+  html_document:
+    number_sections: true
+    self_contained: no
+bibliography: ../biblio.bib
+linkcolor: blue
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dev=c("png", "pdf"),
+  comment = "#>",
+  fig.align = "center"
+)
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(ggplot2, dplyr, knitr, latex2exp, tibble, tidyr, xtable, kableExtra)
+pacman::p_load_gh("OlivierBinette/pretty")
+library(MSETools)
+
+colors=c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
+```
+
+
+First we construct the conditioned dataset and compute the true count.
+
+```{r}
+datasets = list("United Kingdom" = UK, 
+                "Netherlands" = Netherlands, 
+                "New Orleans" = NewOrleans, 
+                "Western U.S." = WesternUS, 
+                "Australia" = Australia)
+
+models = list("Independence" = independence, 
+              "SparseMSE" = sparsemse, 
+              "dga" = dga, 
+              "LCMCR" = lcmcr)
+
+make_data <- function(dataset) {
+  
+  lists = listnames(dataset)
+  
+  conditioned = lapply(lists, function(listname) {
+    data = MSEdata(dataset[dataset[, listname]==1, ] %>% omit(listname))
+    true_count = sum(dataset[dataset[, listname]==1, "count"])
+
+nobs = sum(data$count)
+    return(list(conditioned=data, true_count=true_count, nobs=nobs))
+  })
+  
+  names(conditioned) = lists
+  
+  return(conditioned)
+}
+
+conditioned = lapply(datasets, function(data) make_data(data))
+names(conditioned) = names(datasets)
+
+data = tibble(conditioned, dataset=names(datasets), model=list(models)) %>% 
+  unnest_longer(conditioned) %>% 
+  unnest_wider(conditioned) %>% 
+  unnest_longer(model)
+  
+```
+
+Next we apply each of the approach to each of the conditioned datasets.
+
+```{r}
+fits = lapply(1:nrow(data), function(i) data[[i, "model"]][[1]](data[[i, "conditioned"]][[1]]))
+```
+
+```{r estimates, cache=TRUE}
+ests = batch.estimates(fits, njobs=length(fits), mc.cores=20, plan="collect")
+```
+
+```{r internal_consistency_figure, fig.width=6, fig.height=3}
+data = data %>% 
+  add_column(ests = ests[names(ests)!="message"]) %>%  # Remove error messages
+  unnest_wider(ests) %>% 
+  filter(nobs >= 30)
+
+ggplot(data) +
+  geom_point(aes(x=factor(conditioned_id), y=log(true_count)), shape=95, size=9) +
+  geom_linerange(aes(x=factor(conditioned_id), ymin=log(N.lwr), ymax=log(N.upr), colour=model_id), position=position_dodge(width=0.6)) +
+  geom_point(aes(x=factor(conditioned_id), y=log(N.hat), colour=model_id), position=position_dodge(width=0.6)) +
+  facet_wrap(vars(dataset), scales="free")+
+  ylab("Log population size")+
+  xlab("Reference list") +
+  labs(colour="Model") +
+  theme_minimal() + 
+  theme(panel.grid.minor.x=element_line(size = 0),
+        panel.grid.major.x=element_line(size = 0),
+        axis.ticks.x=element_blank()) +
+  scale_colour_manual(values=colors) +
+  scale_fill_manual(values=colors)
+```
+
+Computation of the log relative bias
+
+```{r}
+data %>% 
+  filter(conditioned_id != "K") %>% 
+  mutate(LRB = log(N.hat/true_count),
+         covers = (true_count > N.lwr) & (true_count < N.upr),
+         lwr_covers = (true_count > N.lwr),
+         upr_covers = (true_count < N.upr)) %>% 
+  group_by(model_id) %>% 
+  summarize(mean_LRB = mean(LRB, na.rm=TRUE),
+            sd_LRB = sd(LRB, na.rm=TRUE),
+            RMSE_LRB = sqrt(mean(LRB^2, na.rm=TRUE)),
+            median_LRB = quantile(LRB, 0.5, na.rm=TRUE),
+            coverage = mean(covers, na.rm=TRUE),
+            lwr_coverage = mean(lwr_covers, na.rm=TRUE),
+            upr_coverage = mean(upr_covers, na.rm=TRUE)) %>% 
+  xtable(type="latex") %>% 
+  print(file="internal_consistency_files/internal_consistency_summary.tex")
+```
+
+Distribution of the log relative bias
+
+```{r LRB_dist, fig.width=4, fig.height=3}
+data %>% 
+  filter(conditioned_id != "K") %>% 
+  mutate(LRB = log(N.hat/true_count),
+         covers = (true_count > N.lwr) & (true_count < N.upr)) %>% 
+  ggplot() +
+  geom_density(aes(LRB, colour=model_id)) +
+  xlab("Log relative bias") +
+  ylab("") +
+  labs(colour="Model", fill="Model") +
+  theme_minimal() +
+  theme(panel.grid.minor=element_blank(),
+      panel.grid.major=element_blank(),
+      axis.ticks=element_line(colour="grey80"),
+      axis.line=element_line(colour="grey80")) +
+  scale_colour_manual(values=colors) +
+  scale_fill_manual(values=colors)
+```
+
+
+
+
+# Description of the datasets
+
+```{r}
+library(kableExtra)
+library(xtable)
+data %>% 
+  filter(nobs > 30, model_id=="Independence") %>% 
+  mutate(noverlap = lapply(conditioned, function(data) {
+    sum((rowSums(data[, listnames(data)]) >= 2) * data$count)
+  })) %>% 
+  select(dataset, conditioned_id, true_count, nobs, noverlap) %>% 
+  kable(booktabs = TRUE, escape = FALSE, format="latex") %>% 
+#  add_header_above(c(" ", "colLabel1"=2, "colLabel2"=2)) %>% 
+  kable_styling(latex_options = "hold_position") %>%
+  column_spec(1, bold=TRUE) %>%
+  collapse_rows(columns = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
