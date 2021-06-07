@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
 # MSETools
 
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
 This repository contains all of the code and analyses for the paper titled "On the Reliability of Multiple Systems Estimation for the Quantification of Modern Slavery"  (Binette and Steorts, 2021). It is structured as follows:
