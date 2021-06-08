@@ -1,0 +1,10 @@
+base
+pacman
+ggplot2
+dplyr
+knitr
+latex2exp
+tibble
+tidyr
+pretty
+MSETools
