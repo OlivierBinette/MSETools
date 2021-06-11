@@ -77,7 +77,7 @@ reproduced herein.
 library(MSETools)
 ```
 
-Define a list of models fitted to the UK dataset:
+Define a list of models fitted to the United Kingdom dataset:
 
 ``` r
 models = list(lcmcr(UK), sparsemse(UK), dga(UK), independence(UK))
