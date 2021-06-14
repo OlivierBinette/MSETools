@@ -178,6 +178,24 @@ ests %>%
           panel.grid.major.x = element_blank())
 ```
 
+```{r UK_estimates, echo=FALSE, fig.width=4, fig.height=4}
+ests %>% 
+  left_join(published_estimates) %>% 
+  head
+
+ests %>% 
+  left_join(published_estimates) %>% 
+  filter(dataset == "United Kingdom") %>% 
+  ggplot() +
+    geom_linerange(aes(x = model, ymin = as.numeric(N.lwr), ymax=as.numeric(N.upr))) +
+    geom_point(aes(x = model, y = as.numeric(N.hat))) +
+    geom_rect(aes(xmin=0, xmax=5, ymin=ymin, ymax=ymax), fill="#0072B2", alpha=0.1) +
+    expand_limits(y=0) + 
+    ylab("Population size") +
+    theme_minimal() +
+    theme(axis.text.x=element_text(angle=45, hjust=1),
+          panel.grid.major.x = element_blank())
+```
 
 
 
