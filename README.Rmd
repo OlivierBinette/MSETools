@@ -61,8 +61,7 @@ devtools::install_github("OlivierBinette/MSETools")
   - **SparseMSE:** The `sparsemse()` function provides an interface to
     the `SparseMSE` package of Chan, Silverman and Vincent (2019), which
     implements a Poisson log-linear approach with stepwise model
-    selection and bootstrap confidence intervals. An option has been
-    added to parallelize bootstrap replications across available cores.
+    selection and bootstrap confidence intervals.
 
 ### Helper functions
 
