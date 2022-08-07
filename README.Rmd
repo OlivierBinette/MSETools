@@ -19,8 +19,8 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 This repository contains all of the code and analyses for the paper
-titled “On the Reliability of Multiple Systems Estimation for the
-Quantification of Modern Slavery” (Binette and Steorts, 2021). It is
+titled [“On the Reliability of Multiple Systems Estimation for the
+Quantification of Modern Slavery” (Binette and Steorts, 2021)](https://arxiv.org/abs/2112.01594). It is
 structured as follows:
 
 -   The R package **MSETools** provides a unified interface to multiple
